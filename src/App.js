@@ -36,7 +36,8 @@ async function uploadImage(file) {
   
   this.setState({ image: url, loading:true })
   if( this.state[this.state.modelname] === null){
-    var json = 'http://127.0.0.1:8080/'+this.state.modelname+'/model.json' 
+    var json = 'https://tfecounintg.000webhostapp.com/'+this.state.modelname+'/model.json'
+    // var json = 'http://127.0.0.1:8080/'+this.state.modelname+'/model.json' 
     var model = await tf.loadGraphModel(json)
     this.setState( { [this.state.modelname]: model} )
   }
