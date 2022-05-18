@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/livecounting/static/css/main.22ea66e6.css",
-    "main.js": "/livecounting/static/js/main.70b515f3.js",
+    "main.js": "/livecounting/static/js/main.d2ad98f7.js",
     "static/js/787.0d6ffddd.chunk.js": "/livecounting/static/js/787.0d6ffddd.chunk.js",
     "index.html": "/livecounting/index.html",
     "main.22ea66e6.css.map": "/livecounting/static/css/main.22ea66e6.css.map",
-    "main.70b515f3.js.map": "/livecounting/static/js/main.70b515f3.js.map",
+    "main.d2ad98f7.js.map": "/livecounting/static/js/main.d2ad98f7.js.map",
     "787.0d6ffddd.chunk.js.map": "/livecounting/static/js/787.0d6ffddd.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.22ea66e6.css",
-    "static/js/main.70b515f3.js"
+    "static/js/main.d2ad98f7.js"
   ]
 }
