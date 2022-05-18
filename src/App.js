@@ -73,7 +73,7 @@ class Count extends Component{
   async componentDidMount(){
     updateState = updateState.bind(this)
     uploadImage = uploadImage.bind(this)
-    var json = 'https://tfecounintg.000webhostapp.com/model.json'
+    var json = 'https://tfecounintg.000webhostapp.com/ShanghaiA/model.json'
     // var json = 'http://127.0.0.1:8080/ShanghaiA/model.json'
     const model = await tf.loadGraphModel(json)
     var resolutionWidth = 113
@@ -129,7 +129,8 @@ class Count extends Component{
     console.log('URL UPLOAD : ', url)
 
     if( this.state[this.state.modelname] === null){
-      var json = 'http://127.0.0.1:8080/'+this.state.modelname+'/model.json' 
+      var json = 'https://tfecounintg.000webhostapp.com/'+this.state.modelname+'/model.json'
+      // var json = 'http://127.0.0.1:8080/'+this.state.modelname+'/model.json' 
       var model = await tf.loadGraphModel(json)
       this.setState( { [this.state.modelname]: model} )
     }
