@@ -1,11 +1,15 @@
 import './App.css';
 import {Component} from 'react';
 import * as tf from '@tensorflow/tfjs';
+// import Dropdown from 'react-bootstrap/Dropdown'
+import { Dropdown, Form, Button } from 'react-bootstrap'
+import { SpinnerCircular, SpinnerRoundFilled } from 'spinners-react';
+import { Conv2DBackpropFilter } from '@tensorflow/tfjs';
+
 tf.ENV.set('WEBGL_PACK', false)
 // import { CameraFeed } from './camera-feed';
 var axios = require('axios');
 var qs = require('qs');
-const MODEL_URL = './model.json';
 
 function getBase64(file) {
   return new Promise((resolve, reject) => {
@@ -18,9 +22,32 @@ function getBase64(file) {
 
 
 function updateState(value, url){
-  console.log("URL CHECK :", url)
   this.setState( {value: value, display:true})
   this.setState({ image: URL.createObjectURL(url) })
+}
+
+async function uploadImage(file) {
+  console.log("UPLOAD")
+  const formData = new FormData();
+  formData.append('file', file);
+  console.log(file)
+  var url = URL.createObjectURL(file)
+  console.log("URL : ", url)
+  
+  this.setState({ image: url, loading:true })
+  if( this.state[this.state.modelname] === null){
+    var json = 'http://127.0.0.1:8080/'+this.state.modelname+'/model.json' 
+    var model = await tf.loadGraphModel(json)
+    this.setState( { [this.state.modelname]: model} )
+  }
+
+  const image = new Image()
+  image.src = url
+  image.onload = async () => {
+    var nbr = this.doStuff(image)
+    var v = await nbr.array()
+    this.setState( {value: v.toFixed(), image: url, display:true} )
+  }
 }
 
   
@@ -30,40 +57,44 @@ class Count extends Component{
     this.state ={
       value: null,
       display:false,
+      loading: false,
       image:null,
-      model:null
+      ShanghaiA:null,
+      ShanghaiB:null,
+      A10:null,
+      modelname:'ShanghaiA',
+      resolutionHeight: null,
+      resolutionWidth: null,
+      modelResolution: {ShanghaiA: [113,86], ShanghaiB: [256,192], A10: [113, 86]}
     }
     
   }
 
   async componentDidMount(){
     updateState = updateState.bind(this)
-    var json = 'https://tfecounintg.000webhostapp.com/model.json'
-    console.log(json)
+    uploadImage = uploadImage.bind(this)
+    //var json = 'https://tfecounintg.000webhostapp.com/model.json'
+    var json = 'http://127.0.0.1:8080/ShanghaiA/model.json' 
     const model = await tf.loadGraphModel(json)
-    console.log(model)
-    this.setState( {model: model} )
-    // localStorage.setItem('json', JSON.parse(JSON.stringify(json)))
-    // await require('./model/model.json').save('localstorage://json');
-    // Warmup 
-    //const tensor = tf.zeros([1,3,340,257])
-    //console.log(tensor)
-    //var val = model.predict(tensor);
+    var resolutionWidth = 113
+    var resolutionHeight = 86
+    while(resolutionWidth < window.innerWidth/1.5 && resolutionHeight < window.innerHeight/1.5){
+      resolutionWidth = resolutionWidth * (4/3)
+      resolutionHeight = resolutionHeight * (4/3)
+    }
+
+    this.setState( {ShanghaiA: model, resolutionHeight: resolutionHeight, resolutionWidth: resolutionWidth} )
   }
 
   async onChange(e) {
-    // console.log(e.target)
     var u = e.target.files[0]
-    console.log("U : ", u)
     this.setState({ image: URL.createObjectURL(u), display:true })
     this.forceUpdate()
     var formData = new FormData();
     formData.append("image", u);
-    console.log("IMAGE", u.name)
 
     var s = await getBase64(u).then(
       data => {
-        console.log("DATA :", data)
         return data
       }
     );
@@ -81,7 +112,6 @@ class Count extends Component{
     
     let x = await axios(config)
     .then(function (response) {
-      console.log(JSON.stringify(response.data.value));
       return response.data.value
     })
     .catch(function (error) {
@@ -90,107 +120,145 @@ class Count extends Component{
     this.setState( {value: x, display:true})
   }
 
-  uploadImage(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    console.log("HERE :", file);
-    this.useModel(file);
 
-   /* const base64url = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = error => reject(error);
-    });*/
-  }
-
-    useModel(e){
-
+  async useModel(e){
+    this.setState( {display: false, loading:true} )
     tf.setBackend('cpu')
     var u = e.target.files[0]
     var url = URL.createObjectURL(u)
+    console.log('URL UPLOAD : ', url)
 
-    console.log("MODEL : ", this.state.model)
-    console.log(u)
-    var model = this.state.model
+    if( this.state[this.state.modelname] === null){
+      var json = 'http://127.0.0.1:8080/'+this.state.modelname+'/model.json' 
+      var model = await tf.loadGraphModel(json)
+      this.setState( { [this.state.modelname]: model} )
+    }
+
     const image = new Image()
     image.src = url
-  
-    this.setState({image: url, display:true})
-    function doStuff() {
-      if(image.width===0) {//we want it to match
-          setTimeout(doStuff, 50);//wait 50 millisecnds then recheck
-          return;
-      }
-      var tensor = tf.browser.fromPixels(image); //http-server -a 127.0.0.1 --cors -c60
-      console.log(tensor);
-      tensor = tf.image.resizeBilinear(tensor, [257, 340])
-      var tensor3 = tensor.div(tf.scalar(255).toFloat());
-    /*mean of natural image*/
-      let meanRgb = {  red : 0.485,  green: 0.456,  blue: 0.406 }
-      let stdRgb = { red: 0.229,  green: 0.224,  blue: 0.225 }
-
-      let indices = [
-                  tf.tensor1d([0], "int32"),
-                  tf.tensor1d([1], "int32"),
-                  tf.tensor1d([2], "int32")
-      ];
-      
-      let centeredRgb = {
-        red: tf.gather(tensor3,indices[0],2)
-                 .sub(tf.scalar(meanRgb.red))
-                 .div(tf.scalar(stdRgb.red))
-                 .squeeze(),
-        
-        green: tf.gather(tensor3,indices[1],2)
-                 .sub(tf.scalar(meanRgb.green))
-                 .div(tf.scalar(stdRgb.green))
-                 .squeeze(),
-        
-        blue: tf.gather(tensor3,indices[2],2)
-                 .sub(tf.scalar(meanRgb.blue))
-                 .div(tf.scalar(stdRgb.blue))
-                 .squeeze(),
+    image.onload = async () => {
+      var nbr = this.doStuff(image)
+      var v = await nbr.array()
+      console.log("ROUNDED : ",v.toFixed())
+      this.setState( {value: v.toFixed(), image: url, display:true} )
     }
-    var finaltens = tf.stack([
-      centeredRgb.red, centeredRgb.green, centeredRgb.blue
+  }
+
+  doStuff(image) {
+
+    var model = this.state[this.state.modelname]
+    var resolution = this.state.modelResolution[this.state.modelname]
+    var tensor = tf.browser.fromPixels(image); //http-server -a 127.0.0.1 --cors -c60
+    tensor = tf.image.resizeBilinear(tensor, [resolution[1], resolution[0]])
+    var tensor3 = tensor.div(tf.scalar(255).toFloat());
+    /*mean of natural image*/
+    let meanRgb = {  red : 0.485,  green: 0.456,  blue: 0.406 }
+    let stdRgb = { red: 0.229,  green: 0.224,  blue: 0.225 }
+
+    let indices = [
+                tf.tensor1d([0], "int32"),
+                tf.tensor1d([1], "int32"),
+                tf.tensor1d([2], "int32")
+    ];
+    
+    let centeredRgb = {
+      red: tf.gather(tensor3,indices[0],2)
+               .sub(tf.scalar(meanRgb.red))
+               .div(tf.scalar(stdRgb.red))
+               .squeeze(),
+      
+      green: tf.gather(tensor3,indices[1],2)
+               .sub(tf.scalar(meanRgb.green))
+               .div(tf.scalar(stdRgb.green))
+               .squeeze(),
+      
+      blue: tf.gather(tensor3,indices[2],2)
+               .sub(tf.scalar(meanRgb.blue))
+               .div(tf.scalar(stdRgb.blue))
+               .squeeze(),
+  }
+  var finaltens = tf.stack([
+    centeredRgb.red, centeredRgb.green, centeredRgb.blue
   ]).expandDims(0);
-      var val = model.predict(finaltens);
-      (val.sum()).print()
-      return val.sum()
+
+  var val = model.predict(finaltens);
+  (val.sum()).print()
+  return val.sum();
   }
-  var val = doStuff()
-  this.setState({value : val})
-  console.log("END")
-  }
+
+  
 
 
   render() {
-    var val = this.state.value
     var image = this.state.image
     var display = this.state.display
-    console.log("DISPLAY :", display)
+    var loading = this.state.loading
     return (
       display ?
       <div>
-        <div>
           <h1>Live counting: select an image !</h1>
-          <input type="file" name="file" onChange={(e) => this.useModel(e)} />
-        </div>
+          <div>
+            <Button onClick={() => this.setState( {display: false, loading:false} )}> Go back </Button><br></br>
+           Select a model :
+         <Dropdown>
+           <Dropdown.Toggle variant="primary" id="dropdown-custom-1">
+            {this.state.modelname}
+           </Dropdown.Toggle>
+
+           <Dropdown.Menu >
+             <Dropdown.Item href="#/action-1" onClick={ () => this.setState( {modelname: 'ShanghaiA' } )}> ShanghaiA (crowded scenes)</Dropdown.Item>
+             <Dropdown.Item href="#/action-2" onClick={ () => this.setState( {modelname: 'ShanghaiB' } )}> ShanghaiB (non crowded scenes)</Dropdown.Item>
+             <Dropdown.Item href="#/action-3" onClick={ () => this.setState( {modelname: 'A10' } )}> A10 (auditoriums)</Dropdown.Item>
+          </Dropdown.Menu>
+         </Dropdown>
+         </div>
+        <div> Select a picture : 
+        <Form.Group controlId="formFile" className="w-25">
+          <Form.Control type="file" onChange={(e) => {this.useModel(e)} } /> 
+        </Form.Group> 
+        </div><br></br>
         <div> 
-          <img src={image} alt="file downloaded"/>
-          <p> There are {val} persons on the picture </p>
+          <img src={image} alt="file downloaded" width={this.state.resolutionWidth} height={this.state.resolutionHeight}/>
+          <p> There are {this.state.value} persons on the picture </p>
         </div>
+      </div>
+      : loading ?
+      <div>
+        It is loading
+        <SpinnerRoundFilled color='01090C'/>
       </div>
       :
       <div>
         <h1>Live counting: select an image or take a picture ! </h1>
-        <input type="file" name="file" onChange={(e) => this.useModel(e)}/>
-        <CameraFeed uploadImage={() => this.uploadImage} useModel={() => this.useModel}/>
+         <div>
+           Select a model :
+         <Dropdown>
+           <Dropdown.Toggle variant="primary" id="dropdown-custom-1">
+            {this.state.modelname}
+           </Dropdown.Toggle>
+
+           <Dropdown.Menu >
+             <Dropdown.Item href="#/action-1" onClick={ () => this.setState( {modelname: 'ShanghaiA' } )}> ShanghaiA (crowded scenes)</Dropdown.Item>
+             <Dropdown.Item href="#/action-2" onClick={ () => this.setState( {modelname: 'ShanghaiB' } )}> ShanghaiB (non crowded scenes)</Dropdown.Item>
+             <Dropdown.Item href="#/action-3" onClick={ () => this.setState( {modelname: 'A10' } )}> A10 (auditoriums)</Dropdown.Item>
+          </Dropdown.Menu>
+         </Dropdown>
+         </div>
+        <div> Select a picture : 
+        <Form.Group controlId="formFile" className="w-25">
+          <Form.Control type="file" onChange={(e) => this.useModel(e)} /> 
+        </Form.Group> 
+        </div><br></br>
+        <p>Or take a live picture :</p>
+        <CameraFeed uploadImage={() => uploadImage} useModel={() => this.useModel}/>
       </div>
     )
   }
 }
+
+
+
+
 
 class CameraFeed extends Component {
   constructor(props) {
@@ -203,7 +271,6 @@ class CameraFeed extends Component {
    */
   processDevices(devices) {
       devices.forEach(device => {
-          console.log(device.label);
           this.setDevice(device);
       });
   }
@@ -237,18 +304,14 @@ class CameraFeed extends Component {
    * @instance
    */
   takePhoto = () => {
-      console.log("TAKE PICTURE 1")
       const { uploadImage } = this.props;
       var canvas = document.createElement('canvas');
       canvas.width = 680;
       canvas.height = 360;
       const context = canvas.getContext('2d');
       context.drawImage(this.videoPlayer, 0, 0, 680, 360);
-      console.log("CONTEXT : ", context)
-      console.log("CONTEXT : ", uploadImage)
       canvas.toBlob(this.props.uploadImage());
       // this.props.sendFile(context)
-      console.log("TAKE PICTURE 2 : ")
   };
 
   render() {
@@ -257,7 +320,7 @@ class CameraFeed extends Component {
               <div className="c-camera-feed__viewer">
                   <video ref={ref => (this.videoPlayer = ref)} width="680" heigh="360" />
               </div>
-              <button onClick={this.takePhoto}>Take photo!</button>
+              <Button onClick={this.takePhoto}>Take photo!</Button>
               {/* <div className="c-camera-feed__stage">
                   <canvas width="680" height="360" ref={ref => (this.canvas = ref)} />
               </div> */}
