@@ -73,8 +73,8 @@ class Count extends Component{
   async componentDidMount(){
     updateState = updateState.bind(this)
     uploadImage = uploadImage.bind(this)
-    //var json = 'https://tfecounintg.000webhostapp.com/model.json'
-    var json = 'http://127.0.0.1:8080/ShanghaiA/model.json' 
+    var json = 'https://tfecounintg.000webhostapp.com/model.json'
+    // var json = 'http://127.0.0.1:8080/ShanghaiA/model.json'
     const model = await tf.loadGraphModel(json)
     var resolutionWidth = 113
     var resolutionHeight = 86
