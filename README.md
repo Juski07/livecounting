@@ -1,6 +1,7 @@
 # Live counting
 
 This project is a web interface made in the context of a master thesis on the crowd counting and developed by Louis Robins & Henri Collin.
+
 The online interface is the following [livecounting](https://juski07.github.io/livecounting/)
 
 ## Run the application : client-only approach
@@ -11,7 +12,8 @@ With this method, you will not have a backend server performing the computations
 
 ## Run the application : client-server approach
 
-It is also possible to run the application with a backend server by executing `npm install` and `npm start` in the backend folder. 
+It is also possible to run the application with a backend server by executing `npm install` and `npm start` in the backend folder.
+
 Please note that some modifications are needed to use this method. Indeed, you have to modify the functions called in the frontend so that it will make the link with the backend.
 
 ## Create your own HTTP-server
