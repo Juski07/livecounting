@@ -1,13 +1,8 @@
 import './App.css';
 import {Component} from 'react';
 import * as tf from '@tensorflow/tfjs';
-// import Dropdown from 'react-bootstrap/Dropdown'
 import { Dropdown, Form, Button } from 'react-bootstrap'
-import { SpinnerCircular, SpinnerRoundFilled } from 'spinners-react';
-import { Conv2DBackpropFilter } from '@tensorflow/tfjs';
-
-tf.ENV.set('WEBGL_PACK', false)
-// import { CameraFeed } from './camera-feed';
+import { SpinnerRoundFilled } from 'spinners-react';
 var axios = require('axios');
 var qs = require('qs');
 
@@ -20,19 +15,13 @@ function getBase64(file) {
   });
 }
 
-
-function updateState(value, url){
-  this.setState( {value: value, display:true})
-  this.setState({ image: URL.createObjectURL(url) })
-}
-
+/*
+* Function used when taking a live picture in the client-only approach
+*/
 async function uploadImage(file) {
-  console.log("UPLOAD")
   const formData = new FormData();
   formData.append('file', file);
-  console.log(file)
   var url = URL.createObjectURL(file)
-  console.log("URL : ", url)
   
   this.setState({ image: url, loading:true })
   if( this.state[this.state.modelname] === null){
@@ -51,8 +40,22 @@ async function uploadImage(file) {
   }
 }
 
-  
+
 class Count extends Component{
+  /*
+  * STATE :
+  * value : number of people in the current image
+  * display : boolean to show the result prediction
+  * loading : boolean to show the loading screen
+  * image : url image to show on the result screen
+  * ShanghaiA : model trained on ShanghaiA
+  * ShanghaiB : model trained on ShanghaiB
+  * A10 : model trained on A10
+  * modelname : the model selected by the user
+  * resolutionHeight : height of the image on the result screen 
+  * resolutionWidht : width of the image on the result screen
+  * modelResolution : resolution of the 3 models that can be used
+  */
   constructor(props) {
     super(props);
     this.state ={
@@ -72,7 +75,6 @@ class Count extends Component{
   }
 
   async componentDidMount(){
-    updateState = updateState.bind(this)
     uploadImage = uploadImage.bind(this)
     var json = 'https://tfecounintg.000webhostapp.com/ShanghaiA/model.json'
     // var json = 'http://127.0.0.1:8080/ShanghaiA/model.json'
@@ -87,6 +89,9 @@ class Count extends Component{
     this.setState( {ShanghaiA: model, resolutionHeight: resolutionHeight, resolutionWidth: resolutionWidth} )
   }
 
+  /*
+  * Function used to send an image (in base64) to the backend. The function waits for the results.
+  */
   async onChange(e) {
     var u = e.target.files[0]
     this.setState({ image: URL.createObjectURL(u), display:true })
@@ -121,13 +126,13 @@ class Count extends Component{
     this.setState( {value: x, display:true})
   }
 
-
+  /*
+  * Function used to make when downloading an image in the client-only approach
+  */
   async useModel(e){
     this.setState( {display: false, loading:true} )
-    tf.setBackend('cpu')
     var u = e.target.files[0]
     var url = URL.createObjectURL(u)
-    console.log('URL UPLOAD : ', url)
 
     if( this.state[this.state.modelname] === null){
       var json = 'https://tfecounintg.000webhostapp.com/'+this.state.modelname+'/model.json'
@@ -141,11 +146,13 @@ class Count extends Component{
     image.onload = async () => {
       var nbr = this.doStuff(image)
       var v = await nbr.array()
-      console.log("ROUNDED : ",v.toFixed())
       this.setState( {value: v.toFixed(), image: url, display:true} )
     }
   }
 
+  /*
+  * Function called in the client-only approach to normalize pixels value and return the prediction
+  */
   doStuff(image) {
 
     var model = this.state[this.state.modelname]
@@ -153,6 +160,7 @@ class Count extends Component{
     var tensor = tf.browser.fromPixels(image); //http-server -a 127.0.0.1 --cors -c60
     tensor = tf.image.resizeBilinear(tensor, [resolution[1], resolution[0]])
     var tensor3 = tensor.div(tf.scalar(255).toFloat());
+
     /*mean of natural image*/
     let meanRgb = {  red : 0.485,  green: 0.456,  blue: 0.406 }
     let stdRgb = { red: 0.229,  green: 0.224,  blue: 0.225 }
@@ -187,9 +195,6 @@ class Count extends Component{
   (val.sum()).print()
   return val.sum();
   }
-
-  
-
 
   render() {
     var image = this.state.image
@@ -258,10 +263,9 @@ class Count extends Component{
   }
 }
 
-
-
-
-
+/*
+* Component to take live picture
+*/
 class CameraFeed extends Component {
   constructor(props) {
       super(props);
@@ -306,14 +310,12 @@ class CameraFeed extends Component {
    * @instance
    */
   takePhoto = () => {
-      const { uploadImage } = this.props;
       var canvas = document.createElement('canvas');
       canvas.width = 680;
       canvas.height = 360;
       const context = canvas.getContext('2d');
       context.drawImage(this.videoPlayer, 0, 0, 680, 360);
       canvas.toBlob(this.props.uploadImage());
-      // this.props.sendFile(context)
   };
 
   render() {
@@ -323,9 +325,6 @@ class CameraFeed extends Component {
                   <video ref={ref => (this.videoPlayer = ref)} width="680" heigh="360" />
               </div>
               <Button onClick={this.takePhoto}>Take photo!</Button>
-              {/* <div className="c-camera-feed__stage">
-                  <canvas width="680" height="360" ref={ref => (this.canvas = ref)} />
-              </div> */}
           </div>
       );
   }
