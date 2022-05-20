@@ -1,0 +1,26 @@
+{
+  "description": "Phoenix UI - backend",
+  "main": "app.js",
+  "scripts": {
+    "start": "gulp --gulpfile gulpfile.js",
+    "dev": "env-cmd -f ./env/.env.dev gulp --gulpfile gulpfile.js"
+  },
+  "dependencies": {
+    "@rauschma/stringio": "^1.4.0",
+    "axios": "^0.25.0",
+    "body-parser": "^1.19.1",
+    "cors": "^2.8.5",
+    "debug": "^2.6.6",
+    "express": "^4.17.2",
+    "gulp": "^3.9.1",
+    "gulp-nodemon": "^2.2.1",
+    "http-server": "^14.1.0",
+    "nano": "^9.0.5"
+  },
+  "resolutions": {
+    "graceful-fs": "^4.2.9"
+  },
+  "devDependencies": {
+    "env-cmd": "^10.1.0"
+  }
+}
