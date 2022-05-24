@@ -49,12 +49,13 @@ class Count extends Component{
   * loading : boolean to show the loading screen
   * image : url image to show on the result screen
   * ShanghaiA : model trained on ShanghaiA
-  * ShanghaiB : model trained on ShanghaiB
+  * Fast_ShanghaiA : model trained on Fast_ShanghaiA
   * A10 : model trained on A10
   * modelname : the model selected by the user
   * resolutionHeight : height of the image on the result screen 
   * resolutionWidht : width of the image on the result screen
   * modelResolution : resolution of the 3 models that can be used
+  * portrait : boolean to know in which sens to display the picture
   */
   constructor(props) {
     super(props);
@@ -64,12 +65,13 @@ class Count extends Component{
       loading: false,
       image:null,
       ShanghaiA:null,
-      ShanghaiB:null,
+      Fast_ShanghaiA:null,
       A10:null,
       modelname:'ShanghaiA',
       resolutionHeight: null,
       resolutionWidth: null,
-      modelResolution: {ShanghaiA: [113,86], ShanghaiB: [256,192], A10: [113, 86]}
+      modelResolution: {ShanghaiA: [340,257], Fast_ShanghaiA: [256,192], A10: [340, 257]},
+      portrait: false
     }
     
   }
@@ -143,21 +145,29 @@ class Count extends Component{
 
     const image = new Image()
     image.src = url
+    var portrait = false
     image.onload = async () => {
-      var nbr = this.doStuff(image)
+      if(image.height > image.width){
+        portrait = true
+      }
+      var nbr = this.doStuff(image, portrait)
       var v = await nbr.array()
-      this.setState( {value: v.toFixed(), image: url, display:true} )
+      this.setState( {value: v.toFixed(), image: url, display:true, portrait: portrait} )
     }
   }
 
   /*
   * Function called in the client-only approach to normalize pixels value and return the prediction
   */
-  doStuff(image) {
+  doStuff(image, portrait) {
 
     var model = this.state[this.state.modelname]
     var resolution = this.state.modelResolution[this.state.modelname]
     var tensor = tf.browser.fromPixels(image); //http-server -a 127.0.0.1 --cors -c60
+    if(portrait){
+      tensor = tensor.transpose([1,0,2])
+    }
+
     tensor = tf.image.resizeBilinear(tensor, [resolution[1], resolution[0]])
     var tensor3 = tensor.div(tf.scalar(255).toFloat());
 
@@ -192,12 +202,26 @@ class Count extends Component{
   ]).expandDims(0);
 
   var val = model.predict(finaltens);
-  (val.sum()).print()
+  // (val.sum()).print()
   return val.sum();
   }
 
+  renderImage(){
+    return(
+      this.state.portrait ?
+          <div>
+          <img src={this.state.image} alt="file downloaded" width={this.state.resolutionHeight} height={this.state.resolutionWidth} rotate="90"/>
+          <p> There are {this.state.value} persons on the picture </p>
+          </div>
+          :
+          <div>
+          <img src={this.state.image} alt="file downloaded" width={this.state.resolutionWidth} height={this.state.resolutionHeight}/>
+          <p> There are {this.state.value} persons on the picture </p>
+          </div>
+    )
+  }
+
   render() {
-    var image = this.state.image
     var display = this.state.display
     var loading = this.state.loading
     return (
@@ -214,7 +238,7 @@ class Count extends Component{
 
            <Dropdown.Menu >
              <Dropdown.Item href="#/action-1" onClick={ () => this.setState( {modelname: 'ShanghaiA' } )}> ShanghaiA (crowded scenes)</Dropdown.Item>
-             <Dropdown.Item href="#/action-2" onClick={ () => this.setState( {modelname: 'ShanghaiB' } )}> ShanghaiB (non crowded scenes)</Dropdown.Item>
+             <Dropdown.Item href="#/action-2" onClick={ () => this.setState( {modelname: 'Fast_ShanghaiA' } )}> Fast ShanghaiA (faster but less accurate)</Dropdown.Item>
              <Dropdown.Item href="#/action-3" onClick={ () => this.setState( {modelname: 'A10' } )}> A10 (auditoriums)</Dropdown.Item>
           </Dropdown.Menu>
          </Dropdown>
@@ -224,11 +248,8 @@ class Count extends Component{
           <Form.Control type="file" onChange={(e) => {this.useModel(e)} } /> 
         </Form.Group> 
         </div><br></br>
-        <div> 
-          <img src={image} alt="file downloaded" width={this.state.resolutionWidth} height={this.state.resolutionHeight}/>
-          <p> There are {this.state.value} persons on the picture </p>
+          {this.renderImage()}
         </div>
-      </div>
       : loading ?
       <div>
         It is loading
@@ -246,7 +267,7 @@ class Count extends Component{
 
            <Dropdown.Menu >
              <Dropdown.Item href="#/action-1" onClick={ () => this.setState( {modelname: 'ShanghaiA' } )}> ShanghaiA (crowded scenes)</Dropdown.Item>
-             <Dropdown.Item href="#/action-2" onClick={ () => this.setState( {modelname: 'ShanghaiB' } )}> ShanghaiB (non crowded scenes)</Dropdown.Item>
+             <Dropdown.Item href="#/action-2" onClick={ () => this.setState( {modelname: 'Fast_ShanghaiA' } )}> Fast ShanghaiA (faster but less accurate) </Dropdown.Item>
              <Dropdown.Item href="#/action-3" onClick={ () => this.setState( {modelname: 'A10' } )}> A10 (auditoriums)</Dropdown.Item>
           </Dropdown.Menu>
          </Dropdown>
