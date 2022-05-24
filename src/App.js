@@ -70,7 +70,7 @@ class Count extends Component{
       modelname:'ShanghaiA',
       resolutionHeight: null,
       resolutionWidth: null,
-      modelResolution: {ShanghaiA: [340,257], Fast_ShanghaiA: [256,192], A10: [340, 257]},
+      modelResolution: {ShanghaiA: [512,384], Fast_ShanghaiA: [256,192], A10: [340, 257]},
       portrait: false
     }
     
