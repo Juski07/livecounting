@@ -1,6 +1,6 @@
 # Live counting
 
-This project is a web interface made in the context of a master thesis on the crowd counting and developed by Louis Robins & Henri Collin.
+This project is a web interface made in the context of a master thesis on the crowd counting and developed by Collin Henri & Robins Louis.
 
 The online interface is the following [livecounting](https://juski07.github.io/livecounting/) and it proposes :
 * Upload or take a live picture in order to know how many people are on it.
